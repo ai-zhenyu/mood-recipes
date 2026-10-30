@@ -1,13 +1,4 @@
 (function () {
-  const MOODS = [
-    { id: "happy", label: "Happy" },
-    { id: "comfort", label: "Comfort" },
-    { id: "energized", label: "Energized" },
-    { id: "cozy", label: "Cozy" },
-    { id: "adventurous", label: "Adventurous" },
-    { id: "sweet", label: "Sweet" },
-  ];
-
   const STORAGE_KEY = "moodRecipesExcluded";
 
   /** @type {string | null} */
@@ -17,6 +8,7 @@
   /** @type {object | null} */
   let currentRecipe = null;
   let loggedIn = false;
+  let moodFormReady = false;
 
   const moodButtons = document.getElementById("mood-buttons");
   const recipeSection = document.getElementById("recipe-section");
@@ -35,6 +27,12 @@
   const navLogin = document.getElementById("nav-login");
   const navFavorites = document.getElementById("nav-favorites");
   const navLogout = document.getElementById("nav-logout");
+  const addMoodSection = document.getElementById("add-mood");
+  const addMoodForm = document.getElementById("add-mood-form");
+  const moodFormStatus = document.getElementById("mood-form-status");
+
+  const moodButtonClass =
+    "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-400";
 
   async function refreshAuthNav() {
     if (!navLogin || !navLogout) return;
@@ -44,6 +42,8 @@
     navLogin.classList.toggle("hidden", loggedInNow);
     if (navFavorites) navFavorites.classList.toggle("hidden", !loggedInNow);
     navLogout.classList.toggle("hidden", !loggedInNow);
+    if (addMoodSection) addMoodSection.classList.toggle("hidden", !loggedInNow);
+    if (loggedInNow) setupMoodForm();
   }
 
   if (navLogout) {
@@ -179,25 +179,126 @@
     }
   }
 
-  MOODS.forEach((m) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.dataset.mood = m.id;
-    btn.textContent = m.label;
-    btn.className =
-      "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-400";
-    btn.addEventListener("click", () => {
-      selectedMood = m.id;
-      document.querySelectorAll("#mood-buttons button").forEach((b) => {
-        b.classList.remove("ring-2", "ring-orange-500", "bg-orange-100", "border-orange-300");
-      });
-      btn.classList.add("ring-2", "ring-orange-500", "bg-orange-100", "border-orange-300");
-      selectedMoodLabel = m.label;
-      const excluded = getExcludedForMood(m.id);
-      loadRecipe(excluded);
+  function selectMood(id, label, button) {
+    selectedMood = id;
+    selectedMoodLabel = label;
+    document.querySelectorAll("#mood-buttons button[data-mood]").forEach((b) => {
+      b.classList.remove("ring-2", "ring-orange-500", "bg-orange-100", "border-orange-300");
     });
-    moodButtons.appendChild(btn);
-  });
+    button.classList.add("ring-2", "ring-orange-500", "bg-orange-100", "border-orange-300");
+    loadRecipe(getExcludedForMood(id));
+  }
+
+  function renderMoodButtons(moods) {
+    moodButtons.innerHTML = "";
+    moods.forEach((m) => {
+      const wrap = document.createElement("span");
+      wrap.className = "inline-flex items-center";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.mood = m.id;
+      btn.textContent = m.label;
+      btn.className = moodButtonClass;
+      if (m.custom) btn.classList.add("rounded-r-none");
+      btn.addEventListener("click", () => selectMood(m.id, m.label, btn));
+      if (selectedMood === m.id) {
+        btn.classList.add("ring-2", "ring-orange-500", "bg-orange-100", "border-orange-300");
+      }
+      wrap.appendChild(btn);
+
+      if (m.custom && m.moodId) {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", `Remove ${m.label}`);
+        remove.className =
+          "rounded-r-full border border-l-0 border-slate-200 bg-white px-2 py-2 text-sm text-slate-500 hover:bg-red-50 hover:text-red-700";
+        remove.addEventListener("click", async () => {
+          const res = await fetch(`/api/moods/${m.moodId}`, { method: "DELETE" });
+          if (!res.ok) {
+            showError("Could not remove that mood.");
+            return;
+          }
+          if (selectedMood === m.id) {
+            selectedMood = null;
+            selectedMoodLabel = null;
+            recipeSection.classList.add("hidden");
+          }
+          loadMoods();
+        });
+        wrap.appendChild(remove);
+      }
+
+      moodButtons.appendChild(wrap);
+    });
+  }
+
+  async function loadMoods() {
+    const res = await fetch("/api/moods");
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !Array.isArray(body.moods)) {
+      showError("Could not load moods.");
+      return;
+    }
+    renderMoodButtons(body.moods);
+  }
+
+  function addFilterChoices(container, items, param) {
+    container.innerHTML = "";
+    items.forEach((value) => {
+      const label = document.createElement("label");
+      label.className =
+        "inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = value;
+      input.dataset.param = param;
+      input.className = "accent-orange-600";
+      label.append(input, document.createTextNode(value));
+      container.appendChild(label);
+    });
+  }
+
+  async function setupMoodForm() {
+    if (moodFormReady || !addMoodForm) return;
+    moodFormReady = true;
+    const res = await fetch("/api/filters");
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (moodFormStatus) moodFormStatus.textContent = "Could not load categories.";
+      moodFormReady = false;
+      return;
+    }
+    addFilterChoices(document.getElementById("mood-categories"), body.categories || [], "c");
+    addFilterChoices(document.getElementById("mood-areas"), body.areas || [], "a");
+
+    addMoodForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (moodFormStatus) moodFormStatus.textContent = "";
+      const label = document.getElementById("mood-label").value.trim();
+      const filters = [...addMoodForm.querySelectorAll("input[type=checkbox]:checked")].map((input) => ({
+        param: input.dataset.param,
+        value: input.value,
+      }));
+      const resCreate = await fetch("/api/moods", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label, filters }),
+      });
+      const created = await resCreate.json().catch(() => ({}));
+      if (!resCreate.ok) {
+        const detail = typeof created.detail === "string" ? created.detail : "Could not add that mood.";
+        if (moodFormStatus) moodFormStatus.textContent = detail;
+        return;
+      }
+      addMoodForm.reset();
+      if (moodFormStatus) moodFormStatus.textContent = `Added ${created.label}.`;
+      loadMoods();
+    });
+  }
+
+  loadMoods();
 
   btnAnother.addEventListener("click", () => {
     if (!selectedMood) return;

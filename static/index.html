@@ -54,6 +54,41 @@
         ></div>
       </section>
 
+      <section id="add-mood" class="mb-8 hidden rounded-2xl border border-white/60 bg-white/70 p-5 shadow-sm">
+        <h2 class="text-sm font-medium uppercase tracking-wide text-slate-500">Add a mood</h2>
+        <form id="add-mood-form" class="mt-3 space-y-4">
+          <div>
+            <label for="mood-label" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
+            <input
+              id="mood-label"
+              name="label"
+              type="text"
+              maxlength="80"
+              required
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
+              placeholder="Spicy night"
+            />
+          </div>
+          <fieldset>
+            <legend class="mb-2 text-sm font-medium text-slate-700">Categories</legend>
+            <div id="mood-categories" class="flex flex-wrap gap-2"></div>
+          </fieldset>
+          <fieldset>
+            <legend class="mb-2 text-sm font-medium text-slate-700">Areas</legend>
+            <div id="mood-areas" class="flex flex-wrap gap-2"></div>
+          </fieldset>
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              class="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+            >
+              Add mood
+            </button>
+            <span id="mood-form-status" class="text-sm text-slate-600" role="status"></span>
+          </div>
+        </form>
+      </section>
+
       <div
         id="error"
         class="mb-4 hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"

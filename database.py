@@ -49,6 +49,18 @@ class Favorite(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class CustomMood(Base):
+    __tablename__ = "custom_moods"
+    __table_args__ = (UniqueConstraint("user_id", "slug", name="uq_custom_mood_user_slug"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    slug: Mapped[str] = mapped_column(String(80))
+    label: Mapped[str] = mapped_column(String(80))
+    filters_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 def init_db() -> None:
     Base.metadata.create_all(engine)
 

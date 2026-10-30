@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -24,8 +25,8 @@ from auth import (
     require_user,
     verify_password,
 )
-from database import Favorite, User, get_db, init_db
-from recipe_service import VALID_MOODS, get_recipe_for_mood
+from database import CustomMood, Favorite, User, get_db, init_db
+from recipe_service import BUILTIN_MOODS, VALID_MOODS, get_recipe_for_mood, list_mealdb_filters
 
 load_dotenv()
 
@@ -205,24 +206,141 @@ def api_delete_favorite(favorite_id: int, request: Request, db: Session = Depend
     return {"ok": True}
 
 
+class FilterIn(BaseModel):
+    param: str
+    value: str
+
+
+class MoodCreate(BaseModel):
+    label: str
+    filters: list[FilterIn]
+
+
+def _slugify_mood(label: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", label.strip().lower()).strip("-")
+    if not slug or len(slug) > 80:
+        raise HTTPException(status_code=400, detail="Enter a mood name using letters or numbers.")
+    if slug in VALID_MOODS:
+        raise HTTPException(status_code=400, detail="That mood already exists.")
+    return slug
+
+
+def _mood_filters(row: CustomMood) -> list[tuple[str, str]]:
+    try:
+        raw = json.loads(row.filters_json or "[]")
+    except json.JSONDecodeError:
+        raw = []
+    return [(item["param"], item["value"]) for item in raw if item.get("param") and item.get("value")]
+
+
+@app.get("/api/filters")
+async def api_filters():
+    try:
+        return await list_mealdb_filters()
+    except Exception as e:
+        return JSONResponse(
+            status_code=502,
+            content={"detail": "Recipe service unavailable.", "error": str(e)},
+        )
+
+
+@app.get("/api/moods")
+def api_moods(request: Request, db: Session = Depends(get_db)):
+    moods: list[dict] = [
+        {"id": mood["id"], "label": mood["label"], "custom": False} for mood in BUILTIN_MOODS
+    ]
+    user = current_user(request, db)
+    if user is not None:
+        rows = db.scalars(
+            select(CustomMood).where(CustomMood.user_id == user.id).order_by(CustomMood.created_at)
+        ).all()
+        for row in rows:
+            moods.append({"id": row.slug, "label": row.label, "custom": True, "moodId": row.id})
+    return {"moods": moods}
+
+
+@app.post("/api/moods")
+async def api_create_mood(body: MoodCreate, request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    label = body.label.strip()
+    if not label or len(label) > 80:
+        raise HTTPException(status_code=400, detail="Enter a mood name using letters or numbers.")
+    slug = _slugify_mood(label)
+    existing = db.scalar(select(CustomMood).where(CustomMood.user_id == user.id, CustomMood.slug == slug))
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="You already added that mood.")
+
+    try:
+        catalog = await list_mealdb_filters()
+    except Exception as e:
+        return JSONResponse(
+            status_code=502,
+            content={"detail": "Recipe service unavailable.", "error": str(e)},
+        )
+    allowed = {
+        "c": set(catalog["categories"]),
+        "a": set(catalog["areas"]),
+    }
+    chosen: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for item in body.filters:
+        param = item.param.strip()
+        value = item.value.strip()
+        key = (param, value)
+        if param not in allowed or value not in allowed[param] or key in seen:
+            continue
+        seen.add(key)
+        chosen.append({"param": param, "value": value})
+    if not chosen:
+        raise HTTPException(status_code=400, detail="Pick at least one category or area.")
+
+    row = CustomMood(user_id=user.id, slug=slug, label=label, filters_json=json.dumps(chosen))
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"id": row.slug, "label": row.label, "custom": True, "moodId": row.id}
+
+
+@app.delete("/api/moods/{mood_id}")
+def api_delete_mood(mood_id: int, request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    row = db.get(CustomMood, mood_id)
+    if row is None or row.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Mood not found.")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}
+
+
 @app.get("/api/recipe")
 async def api_recipe(
-    mood: str = Query(..., description="Mood slug: happy, comfort, energized, cozy, adventurous, sweet"),
+    request: Request,
+    mood: str = Query(..., description="Built-in or custom mood slug"),
     exclude: str | None = Query(None, description="Comma-separated meal ids to avoid"),
+    db: Session = Depends(get_db),
 ):
     exclude_ids: set[str] = set()
     if exclude:
         exclude_ids = {x.strip() for x in exclude.split(",") if x.strip()}
 
     mood_key = mood.lower().strip()
+    filters: list[tuple[str, str]] | None = None
     if mood_key not in VALID_MOODS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown mood. Valid: {', '.join(sorted(VALID_MOODS))}",
-        )
+        user = current_user(request, db)
+        custom = None
+        if user is not None:
+            custom = db.scalar(
+                select(CustomMood).where(CustomMood.user_id == user.id, CustomMood.slug == mood_key)
+            )
+        if custom is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown mood. Valid: {', '.join(sorted(VALID_MOODS))}",
+            )
+        filters = _mood_filters(custom)
 
     try:
-        recipe = await get_recipe_for_mood(mood_key, exclude_ids)
+        recipe = await get_recipe_for_mood(mood_key, exclude_ids, filters)
     except Exception as e:
         return JSONResponse(
             status_code=502,
