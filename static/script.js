@@ -12,6 +12,11 @@
 
   /** @type {string | null} */
   let selectedMood = null;
+  /** @type {string | null} */
+  let selectedMoodLabel = null;
+  /** @type {object | null} */
+  let currentRecipe = null;
+  let loggedIn = false;
 
   const moodButtons = document.getElementById("mood-buttons");
   const recipeSection = document.getElementById("recipe-section");
@@ -24,6 +29,8 @@
   const recipeInstructions = document.getElementById("recipe-instructions");
   const recipeYoutube = document.getElementById("recipe-youtube");
   const btnAnother = document.getElementById("btn-another");
+  const btnSave = document.getElementById("btn-save");
+  const saveStatus = document.getElementById("save-status");
   const errorEl = document.getElementById("error");
   const navLogin = document.getElementById("nav-login");
   const navLogout = document.getElementById("nav-logout");
@@ -31,9 +38,10 @@
   async function refreshAuthNav() {
     if (!navLogin || !navLogout) return;
     const res = await fetch("/api/me");
-    const loggedIn = res.ok;
-    navLogin.classList.toggle("hidden", loggedIn);
-    navLogout.classList.toggle("hidden", !loggedIn);
+    const loggedInNow = res.ok;
+    loggedIn = loggedInNow;
+    navLogin.classList.toggle("hidden", loggedInNow);
+    navLogout.classList.toggle("hidden", !loggedInNow);
   }
 
   if (navLogout) {
@@ -96,6 +104,8 @@
   }
 
   function renderRecipe(data) {
+    currentRecipe = data;
+    if (saveStatus) saveStatus.textContent = "";
     if (data.id) recipeImage.dataset.mealId = String(data.id);
     recipeImage.src = data.image || "";
     recipeImage.alt = data.name ? `Photo of ${data.name}` : "Recipe";
@@ -180,6 +190,7 @@
         b.classList.remove("ring-2", "ring-orange-500", "bg-orange-100", "border-orange-300");
       });
       btn.classList.add("ring-2", "ring-orange-500", "bg-orange-100", "border-orange-300");
+      selectedMoodLabel = m.label;
       const excluded = getExcludedForMood(m.id);
       loadRecipe(excluded);
     });
@@ -192,4 +203,37 @@
     if (currentId) addExcluded(selectedMood, currentId);
     loadRecipe(getExcludedForMood(selectedMood));
   });
+
+  if (btnSave) {
+    btnSave.addEventListener("click", async () => {
+      if (!loggedIn) {
+        window.location.href = "/login.html";
+        return;
+      }
+      if (!currentRecipe || !selectedMood) return;
+      if (saveStatus) saveStatus.textContent = "";
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          meal_id: currentRecipe.id,
+          mood: selectedMoodLabel || selectedMood,
+          name: currentRecipe.name,
+          category: currentRecipe.category,
+          area: currentRecipe.area,
+          image: currentRecipe.image,
+          instructions: currentRecipe.instructions,
+          youtube: currentRecipe.youtube,
+          ingredients: currentRecipe.ingredients || [],
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(typeof body.detail === "string" ? body.detail : "Could not save recipe.");
+        return;
+      }
+      clearError();
+      if (saveStatus) saveStatus.textContent = "Saved";
+    });
+  }
 })();

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -20,9 +21,10 @@ from auth import (
     current_user,
     hash_password,
     normalize_email,
+    require_user,
     verify_password,
 )
-from database import User, get_db, init_db
+from database import Favorite, User, get_db, init_db
 from recipe_service import VALID_MOODS, get_recipe_for_mood
 
 load_dotenv()
@@ -56,6 +58,42 @@ class LoginBody(BaseModel):
 class ForgotBody(BaseModel):
     email: str
     new_password: str
+
+
+class IngredientIn(BaseModel):
+    ingredient: str
+    measure: str = ""
+
+
+class FavoriteIn(BaseModel):
+    meal_id: str
+    mood: str
+    name: str
+    category: str | None = None
+    area: str | None = None
+    image: str | None = None
+    instructions: str | None = None
+    youtube: str | None = None
+    ingredients: list[IngredientIn] = []
+
+
+def _favorite_payload(row: Favorite) -> dict:
+    try:
+        ingredients = json.loads(row.ingredients_json or "[]")
+    except json.JSONDecodeError:
+        ingredients = []
+    return {
+        "id": row.id,
+        "meal_id": row.meal_id,
+        "mood": row.mood,
+        "name": row.name,
+        "category": row.category,
+        "area": row.area,
+        "image": row.image,
+        "instructions": row.instructions,
+        "youtube": row.youtube,
+        "ingredients": ingredients,
+    }
 
 
 def _login(request: Request, user: User, remember: bool) -> dict[str, str]:
@@ -110,6 +148,61 @@ def api_me(request: Request, db: Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=401, detail="Log in required.")
     return {"email": user.email}
+
+
+@app.post("/api/favorites")
+def api_save_favorite(body: FavoriteIn, request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    meal_id = body.meal_id.strip()
+    mood = body.mood.strip()
+    name = body.name.strip()
+    if not meal_id or not mood or not name:
+        raise HTTPException(status_code=400, detail="Recipe, mood, and name are required.")
+    existing = db.scalar(
+        select(Favorite).where(
+            Favorite.user_id == user.id,
+            Favorite.meal_id == meal_id,
+            Favorite.mood == mood,
+        )
+    )
+    if existing is not None:
+        return _favorite_payload(existing)
+    row = Favorite(
+        user_id=user.id,
+        meal_id=meal_id,
+        mood=mood[:80],
+        name=name[:255],
+        category=(body.category or None),
+        area=(body.area or None),
+        image=(body.image or None),
+        instructions=body.instructions,
+        youtube=(body.youtube or None),
+        ingredients_json=json.dumps([item.model_dump() for item in body.ingredients]),
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return _favorite_payload(row)
+
+
+@app.get("/api/favorites")
+def api_list_favorites(request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    rows = db.scalars(
+        select(Favorite).where(Favorite.user_id == user.id).order_by(Favorite.created_at.desc())
+    ).all()
+    return [_favorite_payload(row) for row in rows]
+
+
+@app.delete("/api/favorites/{favorite_id}")
+def api_delete_favorite(favorite_id: int, request: Request, db: Session = Depends(get_db)):
+    user = require_user(request, db)
+    row = db.get(Favorite, favorite_id)
+    if row is None or row.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Favorite not found.")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}
 
 
 @app.get("/api/recipe")
