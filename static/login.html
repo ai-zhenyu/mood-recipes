@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Montserrat", "system-ui", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Magenta/plum top → soft lavender-blue bottom */
+      .login-bg {
+        min-height: 100vh;
+        background: linear-gradient(
+          180deg,
+          #d946ef 0%,
+          #a21caf 22%,
+          #7c3aed 55%,
+          #a78bfa 82%,
+          #c4d4ff 100%
+        );
+      }
+      /* Plain CSS: gap above button + full width if Tailwind fails to load */
+      .login-btn {
+        display: block;
+        width: 100%;
+        margin-top: 2rem;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body class="login-bg flex items-center justify-center px-5 py-8 font-sans antialiased">
+    <div
+      class="w-full max-w-[400px] rounded-[28px] border border-white/35 bg-white/[0.06] px-8 pb-9 pt-8 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] backdrop-blur-[2px]"
+    >
+      <h1 class="mb-7 text-center text-[26px] font-bold tracking-tight text-white">Login</h1>
+
+      <form class="space-y-0" action="#" method="post" autocomplete="on">
+        <div class="mb-6">
+          <label for="email" class="mb-2 block text-[15px] font-medium text-white">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            class="w-full border-0 border-b border-white bg-transparent pb-2 text-[15px] text-white placeholder-white/50 outline-none ring-0 transition focus:border-white"
+            placeholder=""
+          />
+        </div>
+
+        <div class="mb-5">
+          <label for="password" class="mb-2 block text-[15px] font-medium text-white">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            class="w-full border-0 border-b border-white bg-transparent pb-2 text-[15px] text-white placeholder-white/50 outline-none ring-0 transition focus:border-white"
+            placeholder=""
+          />
+        </div>
+
+        <div class="flex items-center justify-between gap-4 py-4">
+          <label class="flex cursor-pointer items-center gap-2.5 select-none">
+            <input
+              type="checkbox"
+              name="remember"
+              class="h-[17px] w-[17px] shrink-0 cursor-pointer rounded-sm border-2 border-white bg-transparent accent-white focus:outline-none focus:ring-2 focus:ring-white/50"
+            />
+            <span class="text-[14px] font-medium text-white">Remember Me</span>
+          </label>
+          <a
+            href="#"
+            class="whitespace-nowrap text-[14px] font-semibold text-white transition hover:text-white/90"
+            >Forget Password</a
+          >
+        </div>
+
+        <button
+          type="submit"
+          class="login-btn w-full rounded-full bg-white py-3 text-[15px] font-bold tracking-wide text-[#1a0a2e] shadow-sm transition hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-transparent"
+        >
+          Log in
+        </button>
+      </form>
+
+      <p class="mt-7 text-center text-[14px] text-white">
+        Don't have a account
+        <a href="#" class="font-bold text-white underline-offset-2 hover:underline">Register</a>
+      </p>
+    </div>
+  </body>
+</html>

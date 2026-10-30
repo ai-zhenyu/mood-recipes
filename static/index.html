@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mood Recipes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ["Georgia", "Cambria", "serif"],
+              sans: ["system-ui", "Segoe UI", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-100 text-slate-800"
+  >
+    <div class="mx-auto max-w-2xl px-4 py-10">
+      <header class="mb-10 text-center">
+        <h1 class="font-display text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+          Mood-based recipes
+        </h1>
+        <p class="mt-2 text-sm text-slate-600">
+          Pick how you feel — we’ll suggest something to cook.
+        </p>
+      </header>
+
+      <section class="mb-8" aria-labelledby="mood-heading">
+        <h2 id="mood-heading" class="mb-3 text-sm font-medium uppercase tracking-wide text-slate-500">
+          Your mood
+        </h2>
+        <div
+          id="mood-buttons"
+          class="flex flex-wrap gap-2"
+          role="group"
+          aria-label="Select mood"
+        ></div>
+      </section>
+
+      <div
+        id="error"
+        class="mb-4 hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        role="alert"
+      ></div>
+
+      <section
+        id="recipe-section"
+        class="hidden rounded-2xl border border-white/60 bg-white/80 p-6 shadow-lg shadow-orange-900/5 backdrop-blur"
+        aria-live="polite"
+      >
+        <div id="recipe-loading" class="flex items-center gap-3 text-slate-600">
+          <span
+            class="inline-block h-5 w-5 animate-spin rounded-full border-2 border-orange-400 border-t-transparent"
+            aria-hidden="true"
+          ></span>
+          <span>Finding a recipe…</span>
+        </div>
+
+        <div id="recipe-content" class="hidden">
+          <div class="overflow-hidden rounded-xl bg-slate-100">
+            <img
+              id="recipe-image"
+              src=""
+              alt=""
+              class="aspect-video w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <h3 id="recipe-title" class="font-display mt-4 text-2xl font-semibold text-slate-900"></h3>
+          <p id="recipe-meta" class="mt-1 text-sm text-slate-500"></p>
+          <div id="recipe-ingredients" class="mt-4"></div>
+          <p id="recipe-instructions" class="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700"></p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              id="btn-another"
+              class="rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+            >
+              Another recipe
+            </button>
+            <a
+              id="recipe-youtube"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hidden rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Watch video
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <p class="mt-8 text-center text-xs text-slate-400">
+        Recipes via
+        <a href="https://www.themealdb.com/" class="underline hover:text-slate-600" target="_blank" rel="noopener"
+          >TheMealDB</a
+        >
+      </p>
+    </div>
+
+    <script src="/script.js"></script>
+  </body>
+</html>
