@@ -273,6 +273,17 @@
     addFilterChoices(document.getElementById("mood-categories"), body.categories || [], "c");
     addFilterChoices(document.getElementById("mood-areas"), body.areas || [], "a");
 
+    const areaSearch = document.getElementById("area-search");
+    if (areaSearch) {
+      areaSearch.addEventListener("input", () => {
+        const query = areaSearch.value.trim().toLowerCase();
+        document.querySelectorAll("#mood-areas label").forEach((label) => {
+          const matches = !query || label.textContent.toLowerCase().includes(query);
+          label.classList.toggle("hidden", !matches);
+        });
+      });
+    }
+
     addMoodForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (moodFormStatus) moodFormStatus.textContent = "";

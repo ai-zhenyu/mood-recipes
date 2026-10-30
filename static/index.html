@@ -71,11 +71,17 @@
           </div>
           <fieldset>
             <legend class="mb-2 text-sm font-medium text-slate-700">Categories</legend>
-            <div id="mood-categories" class="flex flex-wrap gap-2"></div>
+            <div id="mood-categories" class="flex max-h-40 flex-wrap gap-2 overflow-y-auto"></div>
           </fieldset>
           <fieldset>
             <legend class="mb-2 text-sm font-medium text-slate-700">Areas</legend>
-            <div id="mood-areas" class="flex flex-wrap gap-2"></div>
+            <input
+              id="area-search"
+              type="search"
+              placeholder="Search areas, for example Thai"
+              class="mb-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
+            />
+            <div id="mood-areas" class="flex max-h-40 flex-wrap gap-2 overflow-y-auto"></div>
           </fieldset>
           <div class="flex flex-wrap items-center gap-3">
             <button
