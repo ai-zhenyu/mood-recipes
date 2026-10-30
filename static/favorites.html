@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Favorite recipes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ["Georgia", "Cambria", "serif"],
+              sans: ["system-ui", "Segoe UI", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-100 text-slate-800">
+    <div class="mx-auto max-w-2xl px-4 py-10">
+      <nav class="mb-6 flex justify-end gap-4 text-sm">
+        <a href="/" class="font-medium text-orange-700 hover:text-orange-800">Recipes</a>
+        <button id="nav-logout" type="button" class="font-medium text-slate-600 hover:text-slate-900">Log out</button>
+      </nav>
+      <header class="mb-8 text-center">
+        <h1 class="font-display text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">Favorite recipes</h1>
+        <p class="mt-2 text-sm text-slate-600">Recipes you saved, with the mood you were in.</p>
+      </header>
+
+      <div
+        id="error"
+        class="mb-4 hidden rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        role="alert"
+      ></div>
+
+      <p id="empty" class="hidden rounded-2xl border border-white/60 bg-white/80 px-6 py-10 text-center text-sm text-slate-600 shadow-lg">
+        No favorites yet. Pick a mood and save a recipe.
+      </p>
+
+      <ul id="favorites" class="space-y-4"></ul>
+    </div>
+    <script src="/favorites.js"></script>
+  </body>
+</html>

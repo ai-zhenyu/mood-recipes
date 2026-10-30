@@ -33,6 +33,7 @@
   const saveStatus = document.getElementById("save-status");
   const errorEl = document.getElementById("error");
   const navLogin = document.getElementById("nav-login");
+  const navFavorites = document.getElementById("nav-favorites");
   const navLogout = document.getElementById("nav-logout");
 
   async function refreshAuthNav() {
@@ -41,6 +42,7 @@
     const loggedInNow = res.ok;
     loggedIn = loggedInNow;
     navLogin.classList.toggle("hidden", loggedInNow);
+    if (navFavorites) navFavorites.classList.toggle("hidden", !loggedInNow);
     navLogout.classList.toggle("hidden", !loggedInNow);
   }
 
