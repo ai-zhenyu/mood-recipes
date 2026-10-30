@@ -50,7 +50,13 @@
     >
       <h1 class="mb-7 text-center text-[26px] font-bold tracking-tight text-white">Login</h1>
 
-      <form class="space-y-0" action="#" method="post" autocomplete="on">
+      <p
+        id="form-error"
+        class="mb-4 hidden rounded-lg bg-white/15 px-3 py-2 text-sm text-white"
+        role="alert"
+      ></p>
+
+      <form id="login-form" class="space-y-0" autocomplete="on">
         <div class="mb-6">
           <label for="email" class="mb-2 block text-[15px] font-medium text-white">Email</label>
           <input
@@ -78,6 +84,7 @@
         <div class="flex items-center justify-between gap-4 py-4">
           <label class="flex cursor-pointer items-center gap-2.5 select-none">
             <input
+              id="remember"
               type="checkbox"
               name="remember"
               class="h-[17px] w-[17px] shrink-0 cursor-pointer rounded-sm border-2 border-white bg-transparent accent-white focus:outline-none focus:ring-2 focus:ring-white/50"
@@ -85,7 +92,7 @@
             <span class="text-[14px] font-medium text-white">Remember Me</span>
           </label>
           <a
-            href="#"
+            href="/forgot.html"
             class="whitespace-nowrap text-[14px] font-semibold text-white transition hover:text-white/90"
             >Forget Password</a
           >
@@ -101,8 +108,9 @@
 
       <p class="mt-7 text-center text-[14px] text-white">
         Don't have a account
-        <a href="#" class="font-bold text-white underline-offset-2 hover:underline">Register</a>
+        <a href="/register.html" class="font-bold text-white underline-offset-2 hover:underline">Register</a>
       </p>
     </div>
+    <script src="/auth.js"></script>
   </body>
 </html>

@@ -25,6 +25,25 @@
   const recipeYoutube = document.getElementById("recipe-youtube");
   const btnAnother = document.getElementById("btn-another");
   const errorEl = document.getElementById("error");
+  const navLogin = document.getElementById("nav-login");
+  const navLogout = document.getElementById("nav-logout");
+
+  async function refreshAuthNav() {
+    if (!navLogin || !navLogout) return;
+    const res = await fetch("/api/me");
+    const loggedIn = res.ok;
+    navLogin.classList.toggle("hidden", loggedIn);
+    navLogout.classList.toggle("hidden", !loggedIn);
+  }
+
+  if (navLogout) {
+    navLogout.addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST" });
+      window.location.href = "/";
+    });
+  }
+
+  refreshAuthNav();
 
   function loadExcluded() {
     try {

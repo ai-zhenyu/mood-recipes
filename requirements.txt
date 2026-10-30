@@ -4,3 +4,4 @@ httpx
 sqlalchemy
 bcrypt
 python-dotenv
+itsdangerous
